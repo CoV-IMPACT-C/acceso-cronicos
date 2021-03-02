@@ -77,7 +77,7 @@ ggsave(plot = last_plot(), filename = "output/figures/figura2.png",
        width = 27,height = 15)
 
 
-# Figura 2 - Distribucion de cronicos que posponen segun tipo  ---------------------
+# Figura 3 - Distribucion de cronicos que posponen segun tipo  ---------------------
 data %>%
   pivot_longer(cols = c(starts_with("c1_"), -c(c1_8,c1_9,c1_6_esp)),
                names_to = "variable",
