@@ -13,102 +13,53 @@ library(survey);  options(survey.lonely.psu = "certainty")
 # 2. Load data  -------------------------------------------
 ## movid_i-19
 movid_i_proc <- readRDS(file = "output/data/movid_i_proc.RDS")
-load(file = "output/models/model-care.RData")
 data <- movid_i_proc
 
 # 3. Recodificaciones para informe ----------------------------------------
-# Cumplimiento toque de queda
-data <- data %>% mutate_at(vars(starts_with("f7_")),
-                     funs(car::recode(.,'"Siempre" = "Si";
-                                      c("Casi siempre","Frecuentemente","A veces","Casi nunca")="No"', as.factor = T,
-                          levels = c('No', 'Si')))) %>% # El orden es donde 0 = No, 1 = Si
-  mutate(f4_toque = if_else(f4_toque == "Si", "No", "Si")) %>% # Dar vuelta para entender como "Respeto del toque"
-  mutate_at(vars(f4_toque, starts_with("f7_"), starts_with("f3_")),
-                           funs(as_factor(.)))  %>%  # Como un factor para no perder etiquetas
-  mutate_at(vars(starts_with("f3_"), starts_with("f5_"), f8), funs(forcats::fct_rev(.))) # Revertir  los factores de las barreras donde 1 es
+#Sociodemograficas
+## prev_2categ
 
-
-## Sintesis
-### 1. Cuidados (f7_*): 1 = No, 2 = Si
-### 2. Barreras legitimidad (f3_*): 1 = Muy en desacuerdo a 5 = Muy de acuerdo (revertidas)
-### 3. Barreras fatiga (f5_*): 1 = Muy en desacuerdo a 5 = Muy de acuerdo (revertidas)
-### 4. Barreras percepcion riesgo (f6): 1 = Nada peligroso a 5 = Extremadamente peligroso
-### 5. Barreras (f8): 1 = Nada a 5 = Completamente (revertidas)
-
-
-
-# 4. Modelos para informe -------------------------------------------------
-# Modelos para predecir cuidados
-
-# lm1 <- glm(f4_toque ~ sexo + edad + cronicos + barrera_protect + barrera_fisc + barrera_riesgo + barrera_normas, data=data, family="binomial")
-# lm2 <- glm(f7_wash ~ sexo + edad + cronicos + barrera_protect + barrera_fisc + barrera_riesgo + barrera_normas, data=data, family="binomial")
-# lm3 <- glm(f7_dist ~ sexo + edad + cronicos + barrera_protect + barrera_fisc + barrera_riesgo + barrera_normas, data=data, family="binomial")
-# lm4 <- glm(f7_social ~ sexo + edad + cronicos + barrera_protect + barrera_fisc + barrera_riesgo + barrera_normas, data=data, family="binomial")
-# lm5 <- glm(f7_mask ~ sexo + edad + cronicos + barrera_protect + barrera_fisc + barrera_riesgo + barrera_normas, data=data, family="binomial")
-# lm6 <- glm(f7_mask2 ~ sexo + edad + cronicos + barrera_protect + barrera_fisc + barrera_riesgo + barrera_normas, data=data, family="binomial")
-# 
-# tab_model(lm1, lm2, lm3, lm4, lm5, lm6)
-
-
-# 5. Informe Barreras y medidas cuidado  -------------------------------------------
-
-# Lamina 1: ¿Qué es MOVID-19? -------------------------------------------
-
-# Lamina 2: ¿Quienes somos MOVID-19? -------------------------------------------
-
-# Lamina 3: MOVID-Impact: Metodología, dimensiones -------------------------------------------
-
-
-# Lamina 4: ¿Cuánto nos cuidamos del COVID-19 en Chile? -------------------
-# Figura 1 ---------------------------------------------------------------
-## Indicacion:Descriptivo de toque de queda y los 5 cuidados (quizás usar un grid de 3 x 2) 
-## Variable:f4_toque, f7_wash", "f7_distance", "f7_social", "f7_mask", "f7_mask2"
-## Detalle: Cada gráfico con todas las categorías de respuesta y un NS/NR
-
+#cronicos
 ### Version sin factores
 label <- c(
-  f7_distance = "Distancia física\n de 2 metros",
-  f7_social = "Evitar reuniones de\nmás de 10 personas",
-  f7_wash = "Lavado de manos",
-  f7_mask2 = "Uso mascarilla\nen lugares cerrados",
-  f4_toque = "Respeto\ntoque de queda",
-  f7_mask = "Uso mascarilla\nfuera del hogar")
+  c1_1= "Diabetes",
+  c1_2= "Hipertensión arterial",
+  c1_3= "Infarto cardiaco\n o ACV",
+  c1_4= "Asma, EPOC\n, enfisema pulmonar",
+  c1_5= "Depresión,\nTAG u otra",
+  c1_6= "Otra",
+  c1_7= "Ninguna")
 
+#consulta
+### Version sin factores
+label2 <- c(
+  e5_1= "Consulta médica",
+  e5_2= "Atención dental",
+  e5_3= "Vacunación",
+  e5_4= "Exámenes de laboratorio \o imágenes",
+  e5_5= "Exámenes preventivos 1",
+  e5_6= "Exámenes preventivos 2",
+  e5_7= "Retiro o compra\medicamentos",
+  e5_8= "Cirujías")
+
+
+
+# 4. Informe Barreras y medidas cuidado  -------------------------------------------
+
+# Figura 1 - Distribucion para cada cronico de posponer al menos una atencion -------------------------------------
 data %>%
-  pivot_longer(cols = c(starts_with("f7_"), f4_toque),
-                      names_to = "variable",
-                      values_to = "valor") %>% 
-  group_by(variable, valor) %>% 
-  summarise(n = n()) %>% 
-  mutate (prop = round(n/ sum(n),4)*100) %>%
-  ggplot(aes(x = valor, y = prop, fill = valor)) +
-  geom_bar(stat = "identity", width = 0.9) +
-  facet_wrap(.~ variable, ncol = 2, labeller = labeller(variable = label)) +
-  geom_label(aes(label = paste0(prop, "%")),
-            position = position_stack(vjust = .5),
-            color="white", size= 4, fontface = "bold",
-            show.legend = FALSE) + 
-  labs(x = "", y = "%", title = "") + scale_fill_jama(name = "",
-                                    na.value = "grey50")
-
-
-# Version con factores ----------------------------------------------------
-
-#Figure 1 ----------------------------------------------------------------
-
-data %>%
-  pivot_longer(cols = c(starts_with("f7_"), f4_toque),
-                        names_to = "variable",
-                        values_to = "valor") %>%
+  pivot_longer(cols = c(starts_with("c1_"), -c(c1_8,c1_9,c1_6_esp)),
+               names_to = "variable",
+               values_to = "valor") %>%
   mutate( valor = as.character(valor),
-    valor = if_else(is.na(valor), "NS/NR", valor),
-    valor = as_factor(valor)) %>% 
+          valor = if_else(is.na(valor), "NS/NR", valor),
+          valor = as_factor(valor)) %>% 
   srvyr::as_survey_design(ids = 1, weights = factor_expansion) %>%
   group_by(variable, valor)  %>% 
   summarise(prop = survey_mean(vartype = "ci", na.rm = T)) %>% 
   mutate_at(vars(starts_with("prop")), funs(round(.,4)*100)) %>%
-  filter(valor == "Si") %>% 
-  mutate(variable = factor(variable,levels = c("f7_distance", "f7_social", "f7_wash", "f7_mask2", "f4_toque", "f7_mask"))) %>% 
+  filter(valor == 1) %>% 
+  mutate(variable = factor(variable,levels = c("c1_1", "c1_2", "c1_3","c1_4","c1_5","c1_6", "c1_7"))) %>% 
   ggplot(aes(x = valor, y = prop, fill = valor)) +
   geom_bar(stat = "identity", width = 0.5)  + 
   geom_errorbar(aes(x = valor, ymin = prop_low, ymax= prop_upp), position = "dodge", 
@@ -118,16 +69,97 @@ data %>%
              position = position_stack(vjust = .5),
              color="white", size= 4, fontface = "bold",
              show.legend = FALSE) + 
-  labs(x = "", y = "Porcentaje que se cuida siempre", title = "")  +
+  labs(x = "", y = "Porcentaje de personas con condiciones crónicas", title = "")  +
   scale_fill_jama(name = "", na.value = "grey50") + 
   theme(axis.text.x = element_blank(),
-    axis.ticks.x=element_blank())
+        axis.ticks.x=element_blank())
 
 
 ### Guardar
-ggsave(plot = last_plot(), filename = "output/figures/figure1.png",
+ggsave(plot = last_plot(), filename = "output/figures/figura1.png",
        device = "png",dpi = "retina", units = "cm",
        width = 27,height = 15)
+
+
+# Figura 2 - Distribucion de cronicos que posponen segun tipo  ---------------------
+data %>%
+  pivot_longer(cols = c(starts_with("c1_"), -c(c1_8,c1_9,c1_6_esp)),
+               names_to = "variable",
+               values_to = "valor") %>%
+  mutate( valor = as.character(valor),
+          valor = if_else(is.na(valor), "NS/NR", valor),
+          valor = as_factor(valor)) %>% 
+  srvyr::as_survey_design(ids = 1, weights = factor_expansion) %>%
+  group_by(variable, valor)  %>% 
+  summarise(prop = survey_mean(vartype = "ci", na.rm = T)) %>% 
+  mutate_at(vars(starts_with("prop")), funs(round(.,4)*100)) %>%
+  filter(valor == 1) %>% 
+  mutate(variable = factor(variable,levels = c("c1_1", "c1_2", "c1_3","c1_4","c1_5","c1_6", "c1_7"))) %>% 
+  ggplot(aes(x = valor, y = prop, fill = valor)) +
+  geom_bar(stat = "identity", width = 0.5)  + 
+  geom_errorbar(aes(x = valor, ymin = prop_low, ymax= prop_upp), position = "dodge", 
+                width = .33, color = "#8D8680") +
+  facet_wrap(variable~., nrow = 1, labeller = labeller(variable = label)) +
+  geom_label(aes(label = paste0(round(prop,0), "%")),
+             position = position_stack(vjust = .5),
+             color="white", size= 4, fontface = "bold",
+             show.legend = FALSE) + 
+  labs(x = "", y = "Porcentaje de personas con condiciones crónicas", title = "")  +
+  scale_fill_jama(name = "", na.value = "grey50") + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank())
+
+
+### Guardar
+ggsave(plot = last_plot(), filename = "output/figures/figura1.png",
+       device = "png",dpi = "retina", units = "cm",
+       width = 27,height = 15)
+
+
+# Figura 2 - Distribucion de cronicos que posponen segun prevision ---------------------
+data %>%
+  pivot_longer(cols = starts_with("c2_3"),
+               names_to = "variable",
+               values_to = "valor") %>%
+  mutate( valor = as.character(valor),
+          valor = if_else(is.na(valor), "NS/NR", valor),
+          valor = factor(valor, levels = c("Nunca", "Varios días", "Más de la mitad de los días","Casi todos los días", "NS/NR"))) %>% 
+  srvyr::as_survey_design(ids = 1, weights = factor_expansion) %>%
+  group_by(variable, valor)  %>% 
+  summarise(prop = survey_mean(vartype = "ci", na.rm = T)) %>% 
+  mutate_at(vars(starts_with("prop")), funs(round(.,4)*100)) %>%
+  filter(valor != "NS/NR") %>% 
+  mutate(grado = if_else(valor %in% c("Muy en desacuerdo", "En desacuerdo"),"Bajo","Alto" )) %>% 
+  ggplot(aes(x = valor, y = prop, fill = grado)) +
+  geom_bar(stat = "identity", width = 0.9) +
+  geom_errorbar(aes(x = valor, ymin = prop_low, ymax= prop_upp),position = "dodge", 
+                width = .33, color = "#8D8680") +
+  facet_wrap(.~ variable, ncol = 2, labeller = labeller(variable = c(c2_3 = "Durante las últimas dos semanas, se ha sentido\nbajoneado, deprimido, irritable o desesperanzado"))) +
+  geom_label(aes(label = paste0(round(prop,0), "%")),
+             position = position_stack(vjust = .5),
+             color="white", size= 4, fontface = "bold",
+             show.legend = FALSE) + 
+  labs(x = "", y = "Porcentaje de respuestas", title = "")  + scale_fill_jama(name = "", 
+                                                                              na.value = "grey50") +
+  guides(fill = F)
+
+
+### Guardar
+ggsave(plot = last_plot(), filename = "output/figures/figure3.png",
+       device = "png",dpi = "retina", units = "cm",
+       width = 25,height = 15)
+
+
+# Figura 3 - Proporcion de personas que posponen al menos una atencion --------
+## Por que se la posponen, por miedo al contagio u otra razón.
+
+
+# Lamina 4: ¿Cuánto nos cuidamos del COVID-19 en Chile? -------------------
+# Figura 1 ---------------------------------------------------------------
+## Indicacion:Descriptivo de toque de queda y los 5 cuidados (quizás usar un grid de 3 x 2) 
+## Variable:f4_toque, f7_wash", "f7_distance", "f7_social", "f7_mask", "f7_mask2"
+## Detalle: Cada gráfico con todas las categorías de respuesta y un NS/NR
+
 
 # Figure 2 ----------------------------------------------------------------
 ## Style
