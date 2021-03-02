@@ -32,15 +32,11 @@ label <- c(
 
 #consulta
 ### Version sin factores
+
 label2 <- c(
-  e5_1= "Consulta médica",
-  e5_2= "Atención dental",
-  e5_3= "Vacunación",
-  e5_4= "Exámenes de laboratorio \o imágenes",
-  e5_5= "Exámenes preventivos 1",
-  e5_6= "Exámenes preventivos 2",
-  e5_7= "Retiro o compra\medicamentos",
-  e5_8= "Cirujías")
+  e5_posp_consulta = "Consulta médica",
+  e5_posp_examen = "Exámenes de laboratorio\no imágenes",
+  e5_posp_insumos = "Retiro o compra\n medicamentos")
 
 
 
@@ -48,7 +44,7 @@ label2 <- c(
 
 # Figura 1 - Distribucion para cada cronico de posponer al menos una atencion -------------------------------------
 data %>%
-  pivot_longer(cols = c(starts_with("c1_"), -c(c1_8,c1_9,c1_6_esp)),
+  pivot_longer(cols = c(e5_posp_consulta,e5_posp_examen, e5_posp_insumos),
                names_to = "variable",
                values_to = "valor") %>%
   mutate( valor = as.character(valor),
@@ -58,25 +54,25 @@ data %>%
   group_by(variable, valor)  %>% 
   summarise(prop = survey_mean(vartype = "ci", na.rm = T)) %>% 
   mutate_at(vars(starts_with("prop")), funs(round(.,4)*100)) %>%
-  filter(valor == 1) %>% 
-  mutate(variable = factor(variable,levels = c("c1_1", "c1_2", "c1_3","c1_4","c1_5","c1_6", "c1_7"))) %>% 
+  filter(valor == "Sí") %>% 
+  mutate(variable = factor(variable,levels = c("e5_posp_consulta","e5_posp_examen", "e5_posp_insumos"))) %>% 
   ggplot(aes(x = valor, y = prop, fill = valor)) +
   geom_bar(stat = "identity", width = 0.5)  + 
   geom_errorbar(aes(x = valor, ymin = prop_low, ymax= prop_upp), position = "dodge", 
                 width = .33, color = "#8D8680") +
-  facet_wrap(variable~., nrow = 1, labeller = labeller(variable = label)) +
+  facet_wrap(variable~., nrow = 1, labeller = labeller(variable = label2)) +
   geom_label(aes(label = paste0(round(prop,0), "%")),
              position = position_stack(vjust = .5),
              color="white", size= 4, fontface = "bold",
              show.legend = FALSE) + 
-  labs(x = "", y = "Porcentaje de personas con condiciones crónicas", title = "")  +
+  labs(x = "", y = "Tipo de prestación que se pospone", title = "")  +
   scale_fill_jama(name = "", na.value = "grey50") + 
   theme(axis.text.x = element_blank(),
         axis.ticks.x=element_blank())
 
 
 ### Guardar
-ggsave(plot = last_plot(), filename = "output/figures/figura1.png",
+ggsave(plot = last_plot(), filename = "output/figures/figura2.png",
        device = "png",dpi = "retina", units = "cm",
        width = 27,height = 15)
 
