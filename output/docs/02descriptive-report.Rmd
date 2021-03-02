@@ -1,0 +1,56 @@
+---
+title: "Descriptive Report MOVID-IMPACT survey"
+subtitle: 'ANID-COVID N°960 “CoV-IMPACT-C”'
+author: "by Valentina Andrade"
+lang: es-CL
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: yes
+    depth: 2
+    theme: cerulean
+    number_sections: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = F, warning = F, results = 'asis')
+summarytools::st_options(bootstrap.css     = FALSE,       # Already part of the theme so no need for it
+           plain.ascii       = FALSE,       # One of the essential settings
+           style             = "rmarkdown", # Idem.
+           dfSummary.silent  = TRUE,        # Suppresses messages about temporary files
+           footnote          = NA,          # Keeping the results minimalistic
+           subtitle.emphasis = FALSE)       # For the vignette theme, this gives better results.
+#summarytools::st_css()
+
+library(ggplot2); theme_set(theme_classic() + theme(text = element_text(size = 12)))
+library(knitr);  options(knitr.kable.NA = 'No sabe/No responde')
+kable <- function(data) {
+  knitr::kable(data, booktabs = T, digits = 3) %>% kable_styling(latex_options =c("striped", "scale_down"),bootstrap_options = c("striped", "hover", "responsive", "condensed"))
+}
+```
+
+```{r packages, echo = F}
+# 1. Cargar paquetes
+pacman::p_load(tidyverse, kableExtra)
+# 2. Cargar tablas
+movid_i <- readRDS("../../output/data/movid_i_proc.RDS")
+```
+----
+
+# Presentación
+
+# Módulo A. Sociodemográfico
+
+# Módulo B. Otras variables sociodemográficas
+
+# Módulo C. Preexistencias
+
+# Modulo D. Acceso a la Salud por COVID-19
+
+# Modulo E. Acceso a la Salud por problemas no COVID-19
+
+# Modulo F. Prácticas y percepciones sociales en la pandemia
+
+# Modulo G. Empleo
+
+# Modulo V. Vacuna COVID-19
