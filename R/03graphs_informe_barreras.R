@@ -30,54 +30,10 @@ label <- c(
   c1_6= "Otra",
   c1_7= "Ninguna")
 
-#consulta
-### Version sin factores
-
-label2 <- c(
-  e5_posp_consulta = "Consulta médica",
-  e5_posp_examen = "Exámenes de laboratorio\no imágenes",
-  e5_posp_insumos = "Retiro o compra\n medicamentos")
-
-
 
 # 4. Informe Barreras y medidas cuidado  -------------------------------------------
 
 # Figura 1 - Distribucion para cada cronico de posponer al menos una atencion -------------------------------------
-data %>%
-  pivot_longer(cols = c(e5_posp_consulta,e5_posp_examen, e5_posp_insumos),
-               names_to = "variable",
-               values_to = "valor") %>%
-  mutate( valor = as.character(valor),
-          valor = if_else(is.na(valor), "NS/NR", valor),
-          valor = as_factor(valor)) %>% 
-  srvyr::as_survey_design(ids = 1, weights = factor_expansion) %>%
-  group_by(variable, valor)  %>% 
-  summarise(prop = survey_mean(vartype = "ci", na.rm = T)) %>% 
-  mutate_at(vars(starts_with("prop")), funs(round(.,4)*100)) %>%
-  filter(valor == "Sí") %>% 
-  mutate(variable = factor(variable,levels = c("e5_posp_consulta","e5_posp_examen", "e5_posp_insumos"))) %>% 
-  ggplot(aes(x = valor, y = prop, fill = valor)) +
-  geom_bar(stat = "identity", width = 0.5)  + 
-  geom_errorbar(aes(x = valor, ymin = prop_low, ymax= prop_upp), position = "dodge", 
-                width = .33, color = "#8D8680") +
-  facet_wrap(variable~., nrow = 1, labeller = labeller(variable = label2)) +
-  geom_label(aes(label = paste0(round(prop,0), "%")),
-             position = position_stack(vjust = .5),
-             color="white", size= 4, fontface = "bold",
-             show.legend = FALSE) + 
-  labs(x = "", y = "Tipo de prestación que se pospone", title = "")  +
-  scale_fill_jama(name = "", na.value = "grey50") + 
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x=element_blank())
-
-
-### Guardar
-ggsave(plot = last_plot(), filename = "output/figures/figura2.png",
-       device = "png",dpi = "retina", units = "cm",
-       width = 27,height = 15)
-
-
-# Figura 3 - Distribucion de cronicos que posponen segun tipo  ---------------------
 data %>%
   pivot_longer(cols = c(starts_with("c1_"), -c(c1_8,c1_9,c1_6_esp)),
                names_to = "variable",
@@ -113,6 +69,43 @@ ggsave(plot = last_plot(), filename = "output/figures/figura1.png",
 
 
 # Figura 2 - Distribucion de cronicos que posponen segun prevision ---------------------
+## filtrar cronico sí?
+data %>%
+  pivot_longer(cols = c(e5_posp_consulta,e5_posp_examen, e5_posp_insumos),
+               names_to = "variable",
+               values_to = "valor") %>%
+  mutate( valor = as.character(valor),
+          valor = if_else(is.na(valor), "NS/NR", valor),
+          valor = as_factor(valor)) %>%
+  filter(cronicos == "Sí") %>% 
+  srvyr::as_survey_design(ids = 1, weights = factor_expansion) %>%
+  group_by(variable, valor)  %>% 
+  summarise(prop = survey_mean(vartype = "ci", na.rm = T)) %>% 
+  mutate_at(vars(starts_with("prop")), funs(round(.,4)*100)) %>%
+  filter(valor == "Sí") %>% 
+  mutate(variable = factor(variable,levels = c("e5_posp_consulta","e5_posp_examen", "e5_posp_insumos"))) %>% 
+  ggplot(aes(x = valor, y = prop, fill = valor)) +
+  geom_bar(stat = "identity", width = 0.5)  + 
+  geom_errorbar(aes(x = valor, ymin = prop_low, ymax= prop_upp), position = "dodge", 
+                width = .33, color = "#8D8680") +
+  facet_wrap(variable~., nrow = 1, labeller = labeller(variable = label2)) +
+  geom_label(aes(label = paste0(round(prop,0), "%")),
+             position = position_stack(vjust = .5),
+             color="white", size= 4, fontface = "bold",
+             show.legend = FALSE) + 
+  labs(x = "", y = "Tipo de prestación que se pospone", title = "")  +
+  scale_fill_jama(name = "", na.value = "grey50") + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank())
+
+
+### Guardar
+ggsave(plot = last_plot(), filename = "output/figures/figura2.png",
+       device = "png",dpi = "retina", units = "cm",
+       width = 27,height = 15)
+
+
+# Figura 3 - Distribucion de cronicos que posponen segun prevision ---------------------
 data %>%
   pivot_longer(cols = starts_with("c2_3"),
                names_to = "variable",
